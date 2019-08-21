@@ -1,13 +1,52 @@
 ---
-title: "Supplementary Material for Two Stage Design for Survival Endpoint"
+title: "Supplementary Material II: Simulation"
+subtitle: "Two Stage Design for Prognostic Biomarker Signatures with Survival Endpoint"
 author: "Biyue Dai"
-date: "July 22, 2019"
+date: "August 21, 2019"
 output: html_document
 ---
 
 This article provides a guidance of the supplementary R functions for the manuscript "Two-Stage Adaptive Design for Prognostic Biomarker Signatures with a Survival Endpoint" 
 
 # **Documentation of Functions**
+
+> **two_stage_sim()**
+
+#### Description
+
+Conduct simulation for the proposed two-stage design for given scenarios.
+
+#### Arguments
+
+**nn**: Total sample size 
+
+**rate_l**: rate parameter in the Exponential Distribution that generates the Time of Event Occurs (default = 0.025)
+
+**rate_c**: rate parameter in the Exponential Distribution that generates the Time of Censoring (default = 0.025)
+
+**beta**: the true regression coefficients
+
+**mean**: parameter in generating the dependent variables (default = 0)
+
+**sd**: parameter in generating the dependent variables (default = log(1.5))
+
+**itrB**: number of iterations used for bootstrap or permutation resampling (default = 200)
+
+**nfold**: number of folds for cross-validation (default = 10)
+
+**S**: proportion of samples used in first stage (default: 0.5)
+
+**alpha_1**: level of test in first stage (default: 0.25)
+
+**alpha_2**: level of test in second stage (default: 0.2)
+ 
+**null_C**: The value of C Index under the null hypothesis of interest for bootstrap (default: 0.5)
+
+**method**: character that takes value of "permutation" or "bootstrap".
+
+**rep = 500**: total number of iterations for the Monte Carlo Simulation
+
+**seedID**: seed number for reproducing results (default: NULL)
 
 > **two_stage_permutation()**
 
@@ -60,44 +99,6 @@ Analyze a given data set using the two-stage design. Inference in the first stag
  **alpha_2**: level of test in second stage (default: 0.2)
  
  **null_C **: The value of C Index under the null hypothesis of interest (default: 0.5)
-
-> **two_stage_sim()**
-
-#### Description
-
-Conduct simulation for the proposed two-stage design for given scenarios.
-
-#### Arguments
-
-**nn**: Total sample size 
-
-**rate_l**: rate parameter in the Exponential Distribution that generates the Time of Event Occurs (default = 0.025)
-
-**rate_c**: rate parameter in the Exponential Distribution that generates the Time of Censoring (default = 0.025)
-
-**beta**: the true regression coefficients
-
-**mean**: parameter in generating the dependent variables (default = 0)
-
-**sd**: parameter in generating the dependent variables (default = log(1.5))
-
-**itrB**: number of iterations used for bootstrap or permutation resampling (default = 200)
-
-**nfold**: number of folds for cross-validation (default = 10)
-
-**S**: proportion of samples used in first stage (default: 0.5)
-
-**alpha_1**: level of test in first stage (default: 0.25)
-
-**alpha_2**: level of test in second stage (default: 0.2)
- 
-**null_C**: The value of C Index under the null hypothesis of interest for bootstrap (default: 0.5)
-
-**method**: character that takes value of "permutation" or "bootstrap".
-
-**rep = 500**: total number of iterations for the Monte Carlo Simulation
-
-**seedID**: seed number for reproducing results (default: NULL)
 
 > **tuning_C()**
 
@@ -161,41 +162,13 @@ Function that helps tune the distribution of censoring time so that censoring hi
 
 # **Examples**
 
-### Example 1: Analyze Real Data
+### Example 2: Simulation Under the Null Hypothesis: C = 0.5
+
+We first illustrate how to use the permutation version
 
 ```{r, warning= FALSE, message= FALSE}
-# load functions
 source("functions.R")
-# load data
-data(lung) # built-in data set in survival package
-
-lung <- na.omit(lung) # for simplicity, I only took the complete cases
-survY <- Surv(lung$time, lung$status)
-X <- lung[,c("age","sex","ph.ecog","ph.karno","meal.cal","wt.loss")]
-two_stage_permutation(survY, X, itrB = 100, S =0.5, printmodel = TRUE)
-two_stage_bootstrap(survY, X, itrB = 100, seed = 666, S =0.5)
-two_stage_bootstrap(survY, X, itrB = 100, seed = 666, S =0.5, null_C = 0.6)
 ```
-
-The output contains the following values:
-
-survC: cross-validated C Index of the model built in Stage 1
-
-threshold: the rejection threshold in permutation and bootstrap distribution 
-
-early_stop: indicator of whether the trial is stopped early or not. 1: stopped early; 2: continue to second stage
-
-C_2: C Index in stage 2. It would be NA if the study is stopped early.
-
-se_2: standard error of C Index in stage 2. It would be NA if the study is stopped early.
-
-final_reject: Indicator of whether the signature is finally validated. 1: validated; 2: validation has failed.
-
-cens, cens1, cens2: censoring proportion overall, for stage 1 and for stage 2.
-
-### Example 2: Simulation Under the Null Hypothesis
-
-Permutation:
 
 ```{r}
 result1 <- two_stage_sim(nn = 300, # sample size
@@ -212,7 +185,8 @@ result1 <- two_stage_sim(nn = 300, # sample size
 )
 head(result1)
 ```
-For simplicity, we only specified 5 iterations for the Monte Carlo simulation. Usually we need >= 500 iterations to evaluate operation characteristics
+
+As a demonstration, we only specified 5 iterations for the Monte Carlo simulation. Usually it takes >= 500 iterations to evaluate operation characteristics.
 
 To compute type one error rate:
 ```{r}
@@ -223,69 +197,52 @@ To compute probability of early stopping:
 mean(result1[,"early_stop"])
 ```
 
-We can also use the same function for the Bootstrap:
+### Example 3: Simulate Samples with the population C Index > 0.5
 
-```{r, eval = FALSE}
-result2 <- two_stage_sim(nn = 300, # sample size
-              rate_l = 0.025, rate_c = 0.025,
-              beta = rep(0,10),mean = 0, sd = log(1.5),
-              nfold = 10,
-              itrB = 50, #recommend >= 200
-              S = 0.5,
-              alpha_1 = 0.25, alpha_2 = 0.2,
-              null_C = 0.5,
-              method = "bootstrap",
-              rep = 5, #recommend >= 500
-              seedID = 999
-)
-head(result2)
-```
+Generating data with C > 0.5 is less straignthfoward than generating data with C = 0.5. The difficulty comes from hitting the right level of the population C Index and also maintaining the correct proportion of censoring.
 
+We provided two functions \textbf{tuning_C} and \textbf{tuning_censoring} to select the parameters that can generate the targeted level of C.
 
-### Example 3: Simulation Under the Alternative Hypothesis
+#### Step 1: Tune the Regression coefficients with the \textbf{tuning_C} function so that the Population C Index reaches a targeted value.
 
-Simulation under the alternative hypothesis is less straignthfoward than under the null. The difficulty comes from generating data that hit the right level of targeted C Index in the alternative hypothesis; and also maintain the correct proportion of censoring.
-
-#### Step 1: Tune the Regression coefficients so that the Population C Index reaches a targeted value.
-
-In this example, we aim at having the C Index to be **0.6**. We want to have **4** covariates in the model.
+In this example, we aim at having the C Index to be **0.6**. We want to have **5** covariates in the model.
 
 ```{r}
 tuned_C <- tuning_C(nn = 10000,
-         mean = 0,
-         sd = log(2),
-         rate_l = 0.025,
-         p = 4,
-         by = 0.01,
-         start = 0.5,
-         end = 1.5,
-         targetC = 0.6,
-         seed = 111)
+                    mean = 0,
+                    sd = log(1.5),
+                    rate_l = 0.025,
+                    p = 5,
+                    by = 0.01,
+                    start = 0.5,
+                    end = 1.1,
+                    targetC = 0.6,
+                    seed = 123)
 tuned_C
 ```
 
-The first two outputs yield the values of the beta coefficients that should be used:
+The first two outputs yield the values of the beta coefficients that should be used later:
 
 ```{r}
 tuned_C$beta
 tuned_C$beta_j
 ```
 
-#### Step 2: Tune Censoring Distribution to Hit Targeted Censoring Percentage
+#### Step 2: Tune Censoring Distribution with the \textbf{tuned_censor} function to Hit the Targeted Censoring Percentage
 
-In this step, we take the vector of beta coefficients. We need to tune for the rate parameter in the censoring distribution so that 30 percent of the data is censored.
+Given the beta coefficients produced by \textbf{tuned_C}, We need to tune the rate parameter in the censoring distribution so that 30 percent of the data is censored. 
 
 ```{r}
 tuned_censor<- tuning_censoring(nn = 10000,
-                 mean = 0,
-                 sd = log(2), 
-                 rate_l = 0.025,
-                 start = 0.001,
-                 end = 0.025*0.3*(1-0.3) + 0.05,
-                 by = 0.0001,
-                 beta = c(tuned_C$beta,tuned_C$beta_j),
-                 target = 0.3,
-                 seed = 111)
+                                mean = 0,
+                                sd = log(1.5), 
+                                rate_l = 0.025,
+                                start = 0.001,
+                                end = 0.025*0.3*(1-0.3) + 0.05,
+                                by = 0.0001,
+                                beta = c(tuned_C$beta,tuned_C$beta_j),
+                                target = 0.3,
+                                seed = 111)
 tuned_censor
 ```
 
@@ -296,22 +253,30 @@ tuned_censor$rate_c
 ```
 
 
-#### Step 3: Input the parameters obtained from Step 1 and 2 into the simulation function:
+#### Step 3: Apply the tuned parameters in simulation:
 
-Permutation:
+We can use these data to conduct a simulation with the permutation version of the design. In this scenario, the null Hypothesis is C = 0.5. Since the data is generated under C = 0.6, we will be looking at the power of the study.
 
-```{r}
+```{r, echo = FALSE}
+load("H:\\Courses\\TACO\\simulation_code\\results.RData")
+```
+
+```{r, eval = FALSE}
 result_P <- two_stage_sim(nn = 500, # sample size
               rate_l = 0.025, rate_c = tuned_censor$rate_c,
               beta = c(tuned_C$beta,tuned_C$beta_j),mean = 0, sd = log(1.5),
               nfold = 10,
-              itrB = 50, #recommend >= 200
+              itrB = 200, #recommend >= 200
               S = 0.5,
               alpha_1 = 0.25, alpha_2 = 0.2,
               method = "permutation",
-              rep = 10, #recommend >= 500
+              rep = 500, #recommend >= 500
               seedID = 999
               )
+head(result_P)
+```
+
+```{r, echo = FALSE}
 head(result_P)
 ```
 
@@ -325,21 +290,34 @@ To compute probability of Early Stopping:
 mean(result_P[,"early_stop"])
 ```
 
-Bootstrap (under Null: C = 0.6):
+We can use these data to conduct a simulation with the bootstrap version. In this scenario, we can set the null Hypothesis to be C = 0.6. Since the data is generated under C = 0.6, we will be looking at the type one error rate of the study.
 
-```{r}
+```{r, eval = FALSE}
 result_B <- two_stage_sim(nn = 500, # sample size
               rate_l = 0.025, rate_c =  tuned_censor$rate_c,
               beta = c(tuned_C$beta,tuned_C$beta_j),mean = 0, sd = log(1.5),
               nfold = 10,
-              itrB = 50, #recommend >= 200
+              itrB = 200, #recommend >= 200
               S = 0.5,
               alpha_1 = 0.25, alpha_2 = 0.2,
               null_C = 0.6,
               method = "bootstrap",
-              rep = 10, #recommend >= 500
-              seedID = 999
+              rep = 500, #recommend >= 500
+              seedID = 123
               )
 head(result_B)
 ```
 
+```{r, echo = FALSE}
+head(result_B)
+```
+
+To compute Type one error rate:
+```{r}
+mean(result_B[,"final_validation"])
+```
+
+To compute probability of Early Stopping:
+```{r}
+mean(result_B[,"early_stop"])
+```
