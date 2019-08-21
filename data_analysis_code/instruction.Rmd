@@ -1,7 +1,8 @@
 ---
-title: "Supplementary Material for Two Stage Adaptive Design for Prognostic Biomarker Signature with Survival Endpoint"
+title: "Supplementary Material I: Data Analysis"
+subtitle: "Two Stage Design for Prognostic Biomarker Signatures with Survival Endpoint"
 author: "Biyue Dai"
-date: "July 22, 2019"
+date: "August 21, 2019"
 output: html_document
 ---
 
@@ -72,6 +73,8 @@ Analyze a given data set using the two-stage design. Inference in the first stag
   Lower level function that calculates cross-validated linear predictors from Cox Regression
 
 # **Examples**
+
+### Example 1: Analyze lung cancer data
 
 ```{r, warning= FALSE, message= FALSE}
 # load functions

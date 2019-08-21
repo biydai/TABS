@@ -32,9 +32,6 @@ cvcox <- function(survY, nn ,k = nfold, X){
   sig
 }
 
-
-# function that runs analysis 
-
 two_stage_permutation <- function(survY, #output from surv function in survival package 
                                   X, # matrix or data frame of variables of interest, without missing value
                                   itrB, # number of iteration used in permutation
@@ -44,7 +41,7 @@ two_stage_permutation <- function(survY, #output from surv function in survival 
                                   alpha_1 = 0.25, # split of type one error
                                   alpha_2 = 0.2,
                                   printmodel = FALSE
-  
+                                  
 ){
   if(!is.null(seed)){set.seed(seed)}
   # split data into stage1 and stage2 (stratified by censoring status)
@@ -104,18 +101,7 @@ two_stage_permutation <- function(survY, #output from surv function in survival 
     final_reject <- t > abs(qnorm(alpha_2))
     
     if(printmodel == FALSE){
-    return(c(survC = survC,
-             threshold = threshold,
-             early_stop = early_stop,
-             C_2 = C_2,
-             se_2 = se_2,
-             final_reject = final_reject,
-             cens = 1 - mean(status),
-             cens1 = 1 - mean(survY_1[,2]),
-             cens2 = 1 - mean(survY_2[,2])))
-    }
-    if(printmodel == TRUE){
-      return(list(c(survC = survC,
+      return(c(survC = survC,
                threshold = threshold,
                early_stop = early_stop,
                C_2 = C_2,
@@ -123,23 +109,34 @@ two_stage_permutation <- function(survY, #output from surv function in survival 
                final_reject = final_reject,
                cens = 1 - mean(status),
                cens1 = 1 - mean(survY_1[,2]),
-               cens2 = 1 - mean(survY_2[,2])),
-               final_model = fit1))
+               cens2 = 1 - mean(survY_2[,2])))
+    }
+    if(printmodel == TRUE){
+      return(list(c(survC = survC,
+                    threshold = threshold,
+                    early_stop = early_stop,
+                    C_2 = C_2,
+                    se_2 = se_2,
+                    final_reject = final_reject,
+                    cens = 1 - mean(status),
+                    cens1 = 1 - mean(survY_1[,2]),
+                    cens2 = 1 - mean(survY_2[,2])),
+                  final_model = fit1))
     }
   }
 }
 
 two_stage_bootstrap <- function(survY, #output from surv function in survival package 
-                                  X, # matrix or data frame of variables of interest, without missing value
-                                  itrB, # number of iteration used in boostrap
-                                  seed = NULL, # seed number for reproducing results
-                                  nfold = 10, # cross-validation fold
-                                  S = 0.5, # proportion used in first stage
-                                  alpha_1 = 0.25, # split of type one error
-                                  alpha_2 = 0.2,
-                                  null_C = 0.5, # the null hypothesis of interest
-                                  printmodel = FALSE
-                                  
+                                X, # matrix or data frame of variables of interest, without missing value
+                                itrB, # number of iteration used in boostrap
+                                seed = NULL, # seed number for reproducing results
+                                nfold = 10, # cross-validation fold
+                                S = 0.5, # proportion used in first stage
+                                alpha_1 = 0.25, # split of type one error
+                                alpha_2 = 0.2,
+                                null_C = 0.5, # the null hypothesis of interest
+                                printmodel = FALSE
+                                
 ){
   if(!is.null(seed)){set.seed(seed)}
   # split data into stage1 and stage2 (stratified by censoring status)
@@ -216,19 +213,22 @@ two_stage_bootstrap <- function(survY, #output from surv function in survival pa
     }
     if(printmodel == TRUE){
       return(list(c(survC = survC,
-                  threshold = threshold,
-                  early_stop = early_stop,
-                  C_2 = C_2,
-                  se_2 = se_2,
-                  final_reject = final_reject,
-                  cens = 1 - mean(status),
-                  cens1 = 1 - mean(survY_1[,2]),
-                  cens2 = 1 - mean(survY_2[,2])),
+                    threshold = threshold,
+                    early_stop = early_stop,
+                    C_2 = C_2,
+                    se_2 = se_2,
+                    final_reject = final_reject,
+                    cens = 1 - mean(status),
+                    cens1 = 1 - mean(survY_1[,2]),
+                    cens2 = 1 - mean(survY_2[,2])),
                   final_model = fit1))
     }
   }
 }
- 
+
+
+
+
 # function that can be used for simulation
 two_stage_sim <- function(nn = 300, 
                                 rate_l = 0.025,
@@ -246,40 +246,51 @@ two_stage_sim <- function(nn = 300,
                                 rep = 500,
                                 seedID = NULL
 ){
-  set.seed(seedID)
   p <- length(beta)
   
-  # generate dataset
-  X <- matrix(rnorm(p*nn, mean = mean, sd = sd),ncol = p)
-  lifetimes <- rexp(nn,rate = rate_l*exp(X%*%beta))
-  censtimes <- rexp(nn,rate = rate_c)
-  ztimes <- pmin(lifetimes, censtimes)
-  status <- as.numeric(censtimes > lifetimes)
-  survY <- survival::Surv(ztimes,status)
-
-  X <- data.frame(X)
   result <- matrix(NA,nrow = rep,ncol = 9)
   colnames(result) <- c("survC", "threshold",
                         "early_stop","C_2","se_2",
                         "final_validation",
                         "cens","cens1","cens2")
   
-  if(method == "permutation"){
-    for(j in 1:rep){
-      set.seed(j+seedID)
-      result[j,] <- two_stage_permutation(survY = survY, 
+
+
+      if(method == "permutation"){  
+        for(j in 1:rep){
+          set.seed(j+seedID)
+          
+          # generate dataset
+          X <- matrix(rnorm(p*nn, mean = mean, sd = sd),ncol = p)
+          lifetimes <- rexp(nn,rate = rate_l*exp(X%*%beta))
+          censtimes <- rexp(nn,rate = rate_c)
+          ztimes <- pmin(lifetimes, censtimes)
+          status <- as.numeric(censtimes > lifetimes)
+          survY <- survival::Surv(ztimes,status)
+          X <- data.frame(X)
+          result[j,] <- two_stage_permutation(survY = survY, 
                                          X = X, 
                                          itrB = itrB,
                                          S = S,
                                          alpha_1 = alpha_1,
                                          alpha_2 = alpha_2,
                                          nfold = nfold)
-    }
-  }
-  if(method == "bootstrap"){
-    for(j in 1:rep){
-      set.seed(j+seedID)
-      result[j,] <- two_stage_bootstrap(survY = survY, 
+        }
+      }
+  
+      if(method == "bootstrap"){
+        for(j in 1:rep){
+          set.seed(j+seedID)
+          
+          # generate dataset
+          X <- matrix(rnorm(p*nn, mean = mean, sd = sd),ncol = p)
+          lifetimes <- rexp(nn,rate = rate_l*exp(X%*%beta))
+          censtimes <- rexp(nn,rate = rate_c)
+          ztimes <- pmin(lifetimes, censtimes)
+          status <- as.numeric(censtimes > lifetimes)
+          survY <- survival::Surv(ztimes,status)
+          X <- data.frame(X)
+           result[j,] <- two_stage_bootstrap(survY = survY, 
                                          X = X, 
                                          itrB = itrB,
                                          S = S,
@@ -287,8 +298,8 @@ two_stage_sim <- function(nn = 300,
                                          alpha_2 = alpha_2,
                                          nfold = nfold,
                                          null_C = null_C)
-    }
-  }
+        }
+      }
   result
 }
 
@@ -306,7 +317,7 @@ tuning_C <- function( nn = 10000,
                       initial_beta = NULL,
                       seed = NULL){
   
-  if(is.null(initial_beta)){beta <- rep(0.5,p-1)}
+  if(is.null(initial_beta)){beta <- rep(0.2,p-1)}
   
   if(!is.null(initial_beta)){
     p <- length(initial_beta)
@@ -333,7 +344,7 @@ tuning_C <- function( nn = 10000,
     }
     C[j] <- mean(c(R[R[,2],1],RR[RR[,2],1]))
   }
-  mindiff <- max(which(C < targetC))
+  mindiff <- max(which(C < targetC))+1
   return(list(beta = beta, 
               beta_j = grid[mindiff], 
               C = C[mindiff],
